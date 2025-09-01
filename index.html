@@ -1,0 +1,367 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>What's Your Play Personality? Quiz</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Poppins:wght@700&family=Roboto+Slab:wght@300;900&display=swap" rel="stylesheet">
+    <!-- Chosen Palette: Playful Peach & Deep Indigo -->
+    <!-- Application Structure Plan: The SPA is designed as a linear, multi-step funnel to create a seamless and engaging user journey. 1) Welcome Screen: Captures the user's name for personalization and sets a fun tone. 2) Quiz Screen: Presents one question at a time with a progress bar to reduce cognitive load and maintain momentum (goal-gradient effect). 3) Results Screen: Provides an immediate, positive payoff by revealing the primary Play Personality, boosting the user's sense of self-discovery. 4) Email Capture: An optional, value-driven CTA offering a deeper dive via a PDF profile. This structure was chosen to guide the user from curiosity to rewarding insight with minimal friction. -->
+    <!-- Visualization & Content Choices: 
+        - Report Info: Play Personalities Quiz -> Goal: Organize/Inform -> Viz: Single-question card UI -> Interaction: Clickable answer options -> Justification: Simplifies the quiz process, making it feel quick and fun rather than a chore. Method: HTML/CSS/JS.
+        - Report Info: Quiz Progress -> Goal: Motivate -> Viz: Dynamic Progress Bar -> Interaction: Updates on answer -> Justification: Provides clear visual feedback on completion, encouraging users to finish. Method: HTML/CSS/JS.
+        - Report Info: Personality Result -> Goal: Reward/Inform -> Viz: Dynamic Result Card with Icon -> Interaction: Revealed post-quiz -> Justification: Creates a moment of delight and provides a shareable, positive identity label. Method: HTML/CSS/JS.
+        - Report Info: PDF Offer -> Goal: Engage -> Viz: Email Input Form -> Interaction: User submission -> Justification: Leverages the principle of reciprocity by offering more value after the initial fun experience. Method: HTML/JS.
+    -->
+    <!-- CONFIRMATION: NO SVG graphics used. NO Mermaid JS used. -->
+    <style>
+        body {
+            font-family: 'Roboto Slab', serif;
+            background-color: #FFFFFF;
+            color: #000000;
+            font-size: 16px;
+            font-weight: 300;
+        }
+        h1 {
+            font-family: 'Roboto Slab', serif;
+            font-weight: 900;
+        }
+        h2, h3, h4, h5, h6 {
+            font-family: 'Poppins', sans-serif;
+            font-weight: 700;
+        }
+        .screen {
+            transition: opacity 0.7s ease-in-out, transform 0.7s ease-in-out;
+        }
+        .hidden-section {
+            display: none;
+            opacity: 0;
+            transform: translateY(10px);
+        }
+        .visible-section {
+            display: block;
+            opacity: 1;
+            transform: translateY(0);
+        }
+        .answer-option {
+            transition: all 0.2s ease-in-out;
+            border: 2px solid #E5E7EB;
+        }
+        .answer-option:hover {
+            border-color: #000000;
+            background-color: #F9FAFB;
+        }
+        .btn-primary {
+            background-color: #000000;
+            color: white;
+            transition: background-color 0.3s ease;
+            font-family: 'Poppins', sans-serif;
+            font-weight: 700;
+        }
+        .btn-primary:hover {
+            background-color: #374151;
+        }
+        input[type="text"], input[type="email"] {
+            border: 2px solid #000;
+            padding: 0.75rem 1rem;
+        }
+        input[type="text"]:focus, input[type="email"]:focus {
+            outline: none;
+            box-shadow: 0 0 0 3px rgba(0,0,0,0.2);
+        }
+        #progress-bar {
+            background-color: #000;
+        }
+    </style>
+</head>
+<body class="antialiased">
+
+    <div id="app" class="min-h-screen flex flex-col items-center justify-center p-4">
+        <div class="w-full max-w-2xl mx-auto">
+
+            <!-- Start Screen -->
+            <div id="start-screen" class="screen visible-section text-center bg-white p-8 rounded-none">
+                <h1 class="text-4xl text-black mb-2">Discover Your Inner Player!</h1>
+                <h2 class="text-lg text-gray-700 mb-6">What's your unique cognitive signature for joy and innovation?</h2>
+                <div class="max-w-sm mx-auto">
+                    <input type="text" id="name-input" placeholder="Enter your first name" class="w-full text-lg rounded-none focus:ring-0 focus:border-black transition mb-4">
+                    <button id="start-quiz-btn" class="btn-primary w-full py-3 text-lg rounded-none">Start the Quiz</button>
+                    <p id="name-error" class="text-red-500 text-sm mt-2 hidden">Please enter your name to begin!</p>
+                </div>
+            </div>
+
+            <!-- Quiz Screen -->
+            <div id="quiz-screen" class="screen hidden-section bg-white p-8 rounded-none">
+                <div id="progress-container" class="mb-6">
+                    <div class="flex justify-between mb-1">
+                        <h3 id="progress-text" class="text-base font-bold text-black">Question 1 of 8</h3>
+                    </div>
+                    <div class="w-full bg-gray-200 h-1">
+                        <div id="progress-bar" class="h-1 transition-all duration-500" style="width: 12.5%"></div>
+                    </div>
+                </div>
+                <div id="quiz-content">
+                    <h2 id="question-title" class="text-2xl text-black mb-6 text-center"></h2>
+                    <div id="answer-options" class="grid grid-cols-1 md:grid-cols-2 gap-4"></div>
+                </div>
+                 <div id="loading-results" class="hidden-section text-center py-12">
+                    <div role="status">
+                        <div class="animate-spin rounded-full h-12 w-12 border-b-2 border-black mx-auto"></div>
+                        <p class="mt-4 text-lg text-gray-700">Analyzing your playful spirit...</p>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Results Screen -->
+            <div id="results-screen" class="screen hidden-section text-center bg-white p-8 rounded-none">
+                <h2 id="result-greeting" class="text-3xl text-black mb-4"></h2>
+                <div class="border-2 border-black p-6 mb-6">
+                    <div id="result-icon" class="text-6xl mb-3"></div>
+                    <h3 id="result-title" class="text-2xl text-black"></h3>
+                    <p id="result-description" class="text-gray-700 mt-2"></p>
+                </div>
+                
+                <div class="p-6">
+                    <h4 class="text-xl text-black">Want to dive deeper?</h4>
+                    <p class="text-gray-700 my-3">Get your complete, personalized PDF profile and learn how to thrive with your unique cognitive signature.</p>
+                    <div class="flex flex-col sm:flex-row gap-2 max-w-md mx-auto">
+                        <input type="email" id="email-input" placeholder="Enter your email" class="flex-grow rounded-none focus:ring-0 focus:border-black transition">
+                        <button id="submit-email-btn" class="btn-primary px-6 py-3 rounded-none">Send My Profile</button>
+                    </div>
+                    <p id="email-feedback" class="font-bold text-sm mt-3 hidden"></p>
+                </div>
+            </div>
+
+        </div>
+    </div>
+
+    <script>
+        document.addEventListener('DOMContentLoaded', function () {
+            const quizData = {
+                personalities: {
+                    joker: { name: 'The Joker', icon: '😂', description: 'You thrive on silliness and laughter. Your superpower is finding joy in the absurd and lightening the mood for everyone around you.' },
+                    kinesthete: { name: 'The Kinesthete', icon: '🤸', description: 'You think and feel best when you\'re in motion. Your superpower is your boundless physical energy and your intuitive connection to your body.' },
+                    explorer: { name: 'The Explorer', icon: '🗺️', description: 'You\'re driven by a deep curiosity to discover new things. Your superpower is your adventurous spirit and your ability to find wonder everywhere.' },
+                    competitor: { name: 'The Competitor', icon: '🏆', description: 'You love the thrill of a good challenge and the joy of winning. Your superpower is your strategic mind and your drive to achieve excellence.' },
+                    director: { name: 'The Director', icon: '🎬', description: 'You find immense joy in planning, organizing, and making things happen. Your superpower is your vision and your ability to orchestrate success.' },
+                    collector: { name: 'The Collector', icon: '🦋', description: 'You delight in finding, acquiring, and curating things you love. Your superpower is your keen eye for detail and your passion for creating collections.' },
+                    creator: { name: 'The Artist/Creator', icon: '🎨', description: 'You find pure joy in the act of making things. Your superpower is your imagination and your drive to bring new ideas to life.' },
+                    storyteller: { name: 'The Storyteller', icon: '📚', description: 'You\'re captivated by the power of narrative and imagination. Your superpower is your ability to create and get lost in compelling worlds.' }
+                },
+                questions: [
+                    {
+                        text: "A perfect Saturday afternoon involves...",
+                        answers: [
+                            { text: "Telling hilarious stories with friends.", personality: "joker" },
+                            { text: "Going for a long hike or bike ride.", personality: "kinesthete" },
+                            { text: "Visiting a museum or neighborhood I've never been to.", personality: "explorer" },
+                            { text: "A competitive board game or sports match.", personality: "competitor" }
+                        ]
+                    },
+                    {
+                        text: "When faced with a new project, I first...",
+                        answers: [
+                            { text: "Create a detailed plan and timeline.", personality: "director" },
+                            { text: "Gather all the information and resources I can find.", personality: "collector" },
+                            { text: "Start building or sketching out a prototype.", personality: "creator" },
+                            { text: "Imagine the story this project could tell.", personality: "storyteller" }
+                        ]
+                    },
+                    {
+                        text: "I feel most 'in the zone' when I'm...",
+                        answers: [
+                            { text: "Making people laugh so hard they cry.", personality: "joker" },
+                            { text: "Pushing my physical limits.", personality: "kinesthete" },
+                            { text: "Learning a fascinating new skill.", personality: "explorer" },
+                            { text: "Executing a perfect strategy to win.", personality: "competitor" }
+                        ]
+                    },
+                    {
+                        text: "My workspace is likely to have...",
+                        answers: [
+                            { text: "A perfectly organized calendar and to-do list.", personality: "director" },
+                            { text: "A carefully curated collection of books or objects.", personality: "collector" },
+                            { text: "Lots of tools, art supplies, or half-finished projects.", personality: "creator" },
+                            { text: "Inspirational quotes and character sketches.", personality: "storyteller" }
+                        ]
+                    },
+                    {
+                        text: "If I were a character in a movie, I'd be the...",
+                        answers: [
+                            { text: "Witty comic relief.", personality: "joker" },
+                            { text: "Action hero.", personality: "kinesthete" },
+                            { text: "Intrepid adventurer.", personality: "explorer" },
+                            { text: "Mastermind champion.", personality: "competitor" }
+                        ]
+                    },
+                    {
+                        text: "I'm most proud of my ability to...",
+                        answers: [
+                            { text: "Lead a team to success.", personality: "director" },
+                            { text: "Build an impressive collection of something.", personality: "collector" },
+                            { text: "Create something beautiful from scratch.", personality: "creator" },
+                            { text: "Weave a captivating tale.", personality: "storyteller" }
+                        ]
+                    },
+                    {
+                        text: "A 'boring' task becomes fun if I can...",
+                        answers: [
+                            { text: "Turn it into a silly game.", personality: "joker" },
+                            { text: "Do it while listening to music and moving around.", personality: "kinesthete" },
+                            { text: "Discover a new, more efficient way to do it.", personality: "explorer" },
+                            { text: "Make it a race against the clock or a friend.", personality: "competitor" }
+                        ]
+                    },
+                    {
+                        text: "My friends rely on me to...",
+                        answers: [
+                            { text: "Organize the group trip.", personality: "director" },
+                            { text: "Remember that obscure fact we need.", personality: "collector" },
+                            { text: "Come up with a creative solution to a problem.", personality: "creator" },
+                            { text: "Explain what's happening in the movie.", personality: "storyteller" }
+                        ]
+                    }
+                ]
+            };
+
+            let currentQuestionIndex = 0;
+            let scores = {};
+            let userName = '';
+
+            const startScreen = document.getElementById('start-screen');
+            const quizScreen = document.getElementById('quiz-screen');
+            const resultsScreen = document.getElementById('results-screen');
+            const nameInput = document.getElementById('name-input');
+            const startBtn = document.getElementById('start-quiz-btn');
+            const nameError = document.getElementById('name-error');
+
+            const progressContainer = document.getElementById('progress-container');
+            const progressText = document.getElementById('progress-text');
+            const progressBar = document.getElementById('progress-bar');
+            const questionTitle = document.getElementById('question-title');
+            const answerOptionsContainer = document.getElementById('answer-options');
+            const quizContent = document.getElementById('quiz-content');
+            const loadingResults = document.getElementById('loading-results');
+
+            const resultGreeting = document.getElementById('result-greeting');
+            const resultIcon = document.getElementById('result-icon');
+            const resultTitle = document.getElementById('result-title');
+            const resultDescription = document.getElementById('result-description');
+            const emailInput = document.getElementById('email-input');
+            const submitEmailBtn = document.getElementById('submit-email-btn');
+            const emailFeedback = document.getElementById('email-feedback');
+
+            function switchScreen(hide, show) {
+                hide.classList.remove('visible-section');
+                hide.classList.add('hidden-section');
+                setTimeout(() => {
+                    show.classList.remove('hidden-section');
+                    show.classList.add('visible-section');
+                }, 100);
+            }
+
+            function initializeScores() {
+                for (const key in quizData.personalities) {
+                    scores[key] = 0;
+                }
+            }
+
+            function startQuiz() {
+                userName = nameInput.value.trim();
+                if (userName === '') {
+                    nameError.classList.remove('hidden');
+                    return;
+                }
+                nameError.classList.add('hidden');
+                initializeScores();
+                switchScreen(startScreen, quizScreen);
+                displayQuestion();
+            }
+
+            function displayQuestion() {
+                const question = quizData.questions[currentQuestionIndex];
+                questionTitle.textContent = question.text;
+                answerOptionsContainer.innerHTML = '';
+                question.answers.forEach(answer => {
+                    const button = document.createElement('button');
+                    button.className = 'answer-option w-full text-left p-4 rounded-none';
+                    button.textContent = answer.text;
+                    button.dataset.personality = answer.personality;
+                    button.addEventListener('click', selectAnswer);
+                    answerOptionsContainer.appendChild(button);
+                });
+                updateProgress();
+            }
+
+            function selectAnswer(e) {
+                const selectedPersonality = e.target.dataset.personality;
+                scores[selectedPersonality]++;
+                
+                currentQuestionIndex++;
+                if (currentQuestionIndex < quizData.questions.length) {
+                    displayQuestion();
+                } else {
+                    showResults();
+                }
+            }
+
+            function updateProgress() {
+                const progress = ((currentQuestionIndex + 1) / quizData.questions.length) * 100;
+                progressText.textContent = `Question ${currentQuestionIndex + 1} of ${quizData.questions.length}`;
+                progressBar.style.width = `${progress}%`;
+            }
+
+            function showResults() {
+                quizContent.classList.add('hidden-section');
+                progressContainer.classList.add('hidden-section');
+                loadingResults.classList.remove('hidden-section');
+
+                setTimeout(() => {
+                    let maxScore = -1;
+                    let resultPersonality = '';
+                    for (const personality in scores) {
+                        if (scores[personality] > maxScore) {
+                            maxScore = scores[personality];
+                            resultPersonality = personality;
+                        }
+                    }
+
+                    const result = quizData.personalities[resultPersonality];
+                    resultGreeting.textContent = `You got it, ${userName}!`;
+                    resultIcon.textContent = result.icon;
+                    resultTitle.textContent = `You are The ${result.name}`;
+                    resultDescription.textContent = result.description;
+
+                    switchScreen(quizScreen, resultsScreen);
+                }, 1500);
+            }
+
+            function handleEmailSubmit() {
+                const email = emailInput.value.trim();
+                const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
+                if (emailRegex.test(email)) {
+                    emailFeedback.textContent = "Great! Your personalized profile is on its way.";
+                    emailFeedback.classList.remove('hidden');
+                    emailFeedback.classList.remove('text-red-500');
+                    emailFeedback.classList.add('text-green-600');
+                    emailInput.value = '';
+                } else {
+                    emailFeedback.textContent = "Please enter a valid email address.";
+                    emailFeedback.classList.remove('hidden');
+                    emailFeedback.classList.remove('text-green-600');
+                    emailFeedback.classList.add('text-red-500');
+                }
+            }
+
+            startBtn.addEventListener('click', startQuiz);
+            nameInput.addEventListener('keyup', (e) => {
+                if (e.key === 'Enter') startQuiz();
+            });
+            submitEmailBtn.addEventListener('click', handleEmailSubmit);
+        });
+    </script>
+</body>
+</html>

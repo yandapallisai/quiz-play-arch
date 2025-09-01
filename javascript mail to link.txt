@@ -1,0 +1,110 @@
+// ... existing code ...
+            function showResults() {
+// ... existing code ...
+                    const result = quizData.personalities[resultPersonality];
+                    resultGreeting.textContent = `You got it, ${userName}!`;
+                    resultIcon.textContent = result.icon;
+                    resultTitle.textContent = `You are The ${result.name}`;
+                    resultDescription.textContent = result.description;
+
+                    // Pass the result to the email handler setup
+                    submitEmailBtn.onclick = () => handleEmailSubmit(result.name);
+
+                    switchScreen(quizScreen, resultsScreen);
+                }, 1500);
+            }
+
+            function handleEmailSubmit(profileType) {
+                const email = emailInput.value.trim();
+                const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
+                if (emailRegex.test(email)) {
+                    const subject = "Your Play Personality Profile!";
+                    const body = `Hi ${userName},\n\nThanks for taking the quiz!\n\nYour play personality is: ${profileType}.\n\nHere is a brief description: ${quizData.personalities[profileType.toLowerCase().split(' ')[1]].description}\n\n[Your company/website name]`;
+
+                    // Create a mailto link
+                    const mailtoLink = `mailto:${email}?subject=${encodeURIComponent(subject)}&body=${encodeURIComponent(body)}`;
+                    
+                    // Open the user's email client
+                    window.location.href = mailtoLink;
+
+                    emailFeedback.textContent = "Your email client should now be open!";
+                    emailFeedback.classList.remove('hidden');
+                    emailFeedback.classList.remove('text-red-500');
+                    emailFeedback.classList.add('text-green-600');
+                } else {
+                    emailFeedback.textContent = "Please enter a valid email address.";
+                    emailFeedback.classList.remove('hidden');
+                    emailFeedback.classList.remove('text-green-600');
+                    emailFeedback.classList.add('text-red-500');
+                }
+            }
+
+            startBtn.addEventListener('click', startQuiz);
+            nameInput.addEventListener('keyup', (e) => {
+                if (e.key === 'Enter') startQuiz();
+            });
+            // We set the click handler for the submit button dynamically in showResults
+        });
+// ... existing code ...
+```
+
+---
+
+### Option 2: A Backend Service (The Professional Method)
+
+This is the standard, most reliable way to build this feature. It provides a seamless user experience, sends emails automatically, and can attach files. It involves three parts:
+
+1.  **Front-End (Your Quiz):** Captures the name, email, and personality type.
+2.  **Serverless Function (The Secure Intermediary):** A small, on-demand piece of code that runs on a service like Netlify, Vercel, or AWS Lambda. Its only job is to receive the data from your quiz and securely call the email service.
+3.  **Email Service (The Sender):** A third-party service like **SendGrid**, **Mailgun**, or **Resend** that specializes in sending emails via an API. They handle deliverability and provide templates.
+
+
+
+**How the Workflow Looks:**
+
+1.  The user fills out the form and clicks "Send My Profile."
+2.  Your JavaScript uses the `fetch()` function to `POST` the `userName`, `email`, and `profileType` to your Serverless Function's URL.
+3.  The Serverless Function receives the data. It securely uses its hidden API key to tell SendGrid (for example) to "send this email template to this user's email address with this information."
+4.  SendGrid sends a beautiful, custom HTML email (with a PDF attachment) to the user.
+
+**Example Front-End JavaScript:**
+
+Here is what the `handleEmailSubmit` function would look like for this professional approach.
+
+```javascript
+async function handleEmailSubmit(profileType) {
+    const email = emailInput.value.trim();
+    const name = userName; 
+    
+    // 1. Give user instant feedback
+    submitEmailBtn.textContent = "Sending...";
+    submitEmailBtn.disabled = true;
+
+    try {
+        // 2. Send the data to your backend function
+        const response = await fetch('YOUR_SERVERLESS_FUNCTION_URL', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({ email, name, profileType }),
+        });
+
+        if (!response.ok) {
+            throw new Error('Something went wrong.');
+        }
+
+        // 3. Show success message
+        emailFeedback.textContent = "Success! Your profile is on its way.";
+        emailFeedback.classList.remove('hidden', 'text-red-500');
+        emailFeedback.classList.add('text-green-600');
+        emailInput.value = '';
+
+    } catch (error) {
+        // 4. Show error message
+        emailFeedback.textContent = "Sorry, we couldn't send your profile. Please try again.";
+        emailFeedback.classList.remove('hidden', 'text-green-600');
+        emailFeedback.classList.add('text-red-500');
+    } finally {
+        submitEmailBtn.textContent = "Send My Profile";
+        submitEmailBtn.disabled = false;
+    }
+}
